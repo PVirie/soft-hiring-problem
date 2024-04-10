@@ -49,15 +49,21 @@ def compute_expected_scores(scores):
         sorted_score.insert(i, h)
         return (i + 1)/len(sorted_score)
 
+    count_black_swans = 1
     for i in range(N):
         p_i = 0
         c = find_percentile_and_push(scores[i])
+        if abs(c - 1.0) < 1e-6:
+            # black swan
+            count_black_swans += 1
+        c = c * (1 - count_black_swans / N)
+
         t = (c)**(N - i) # chance none the rest is better than i
 
         R = N - i - 1
         for j in range(N - i):
             power = (c**j) * ((1 - c)**(R - j)) * comb(R, j)
-            coeff = ((c*i + j)/N)**(R)
+            coeff = ((c*i + j + 1)/N)**(R)
             p_i += coeff * power
 
         expected_scores[i] = p_i
