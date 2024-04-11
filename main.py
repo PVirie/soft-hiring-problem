@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 from math import comb
 
 
@@ -13,19 +14,18 @@ def random_score_gaussian(N):
 
 
 def execute_hiring(scores, K):
+    K = int(K)
     max_of_first_K = np.max(scores[:K])
     N = len(scores)
     for i in range(K, N):
         if scores[i] > max_of_first_K:
             return i
-    return -1
+    # always pick the last
+    return i
 
 
 def compute_expected_scores(scores):
     N = len(scores)
-    # compute percentile of each person
-    expected_scores = np.zeros(N)
-    chance_of_being_best = np.zeros(N)
 
     sorted_score = []
     def find_percentile_and_push(h):
@@ -55,8 +55,8 @@ def compute_expected_scores(scores):
         c = find_percentile_and_push(scores[i])
         if abs(c - 1.0) < 1e-6:
             # black swan
+            c = c * (1 - count_black_swans / N)
             count_black_swans += 1
-        c = c * (1 - count_black_swans / N)
 
         t = (c)**(N - i) # chance none the rest is better than i
 
@@ -66,19 +66,51 @@ def compute_expected_scores(scores):
             coeff = ((c*i + j + 1)/N)**(R)
             p_i += coeff * power
 
-        expected_scores[i] = p_i
-        chance_of_being_best[i] = t
-    return expected_scores, chance_of_being_best
+        yield p_i, t
+
     
+
+def run_experiment(M=1000, N=100):
+
+    total_score_secretary = 0
+    total_score_soft_hiring = 0
+
+    for i in range(M):
+        scores = random_score(N)
+
+        p = execute_hiring(scores, N/math.e)
+        total_score_secretary += scores[p]
+
+        j = 0
+        for e, c in compute_expected_scores(scores):
+            if e > 0.5 and j > N/math.e:
+                break
+            j += 1
+        total_score_soft_hiring += scores[j]
+
+        print("Percent ", i*100/M, end='\r')
+
+    print()
+    print("Secretary score", total_score_secretary/M)
+    print("Soft hiring score", total_score_soft_hiring/M)
 
 
 if __name__ == '__main__':
+    
+    run_experiment()
     
     N = 100
     X = np.arange(0, N)
     scores = random_score(N)
 
-    expected_scores, chance_of_being_best = compute_expected_scores(scores)
+    expected_scores = np.zeros(N)
+    chance_of_being_best = np.zeros(N)
+    i = 0
+    for e, c in compute_expected_scores(scores):
+        expected_scores[i] = e
+        chance_of_being_best[i] = c
+        i += 1
+
     plt.bar(X, scores/np.max(scores), color='b', label='score')
     plt.plot(X, chance_of_being_best, color='g', label='p best')
     plt.plot(X, expected_scores, color='r', label='p not better')
