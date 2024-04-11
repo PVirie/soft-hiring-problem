@@ -24,7 +24,7 @@ def execute_hiring(scores, K):
     return i
 
 
-def compute_expected_scores(scores):
+def compute_expected_scores(scores, black_swan=True):
     N = len(scores)
 
     sorted_score = []
@@ -49,14 +49,14 @@ def compute_expected_scores(scores):
         sorted_score.insert(i, h)
         return (i + 1)/len(sorted_score)
 
-    count_black_swans = 1
+    count_black_swans = 0
     for i in range(N):
         p_i = 0
         c = find_percentile_and_push(scores[i])
-        if abs(c - 1.0) < 1e-6:
+        if abs(c - 1.0) < 1e-6 and black_swan:
             # black swan
-            c = c * (1 - count_black_swans / N)
             count_black_swans += 1
+            c = c * (1 - count_black_swans / (i + 1))
 
         t = (c)**(N - i) # chance none the rest is better than i
 
@@ -70,10 +70,11 @@ def compute_expected_scores(scores):
 
     
 
-def run_experiment(M=1000, N=100):
+def run_experiment(M=1000, N=200):
 
     total_score_secretary = 0
-    total_score_soft_hiring = 0
+    total_score_soft_hiring_black_swan = 0
+    total_score_soft_hiring_withhold_no_black_swan = 0
 
     for i in range(M):
         scores = random_score(N)
@@ -82,17 +83,26 @@ def run_experiment(M=1000, N=100):
         total_score_secretary += scores[p]
 
         j = 0
-        for e, c in compute_expected_scores(scores):
+        for e, c in compute_expected_scores(scores, black_swan=True):
+            if e > 0.5:
+                break
+            j += 1
+        total_score_soft_hiring_black_swan += scores[j]
+
+
+        j = 0
+        for e, c in compute_expected_scores(scores, black_swan=False):
             if e > 0.5 and j > N/math.e:
                 break
             j += 1
-        total_score_soft_hiring += scores[j]
+        total_score_soft_hiring_withhold_no_black_swan += scores[j]
 
         print("Percent ", i*100/M, end='\r')
 
     print()
     print("Secretary score", total_score_secretary/M)
-    print("Soft hiring score", total_score_soft_hiring/M)
+    print("Soft hiring score", total_score_soft_hiring_black_swan/M)
+    print("Soft hiring score with hold 1/e no black swan", total_score_soft_hiring_withhold_no_black_swan/M)
 
 
 if __name__ == '__main__':
