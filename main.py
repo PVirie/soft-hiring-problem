@@ -8,11 +8,6 @@ def random_score(N):
     return np.random.randint(0, 1000, N)/1000
 
 
-def random_score_gaussian(N):
-    # mean at N/2
-    return np.random.normal(N/2, 1, N)
-
-
 def execute_hiring(scores, K):
     K = int(K)
     max_of_first_K = np.max(scores[:K])
@@ -20,11 +15,10 @@ def execute_hiring(scores, K):
     for i in range(K, N):
         if scores[i] > max_of_first_K:
             return i
-    # always pick the last
-    return i
+    return -1
 
 
-def compute_expected_scores(scores, black_swan=True):
+def compute_expected_scores(scores, black_swan=True, oracle_bs=False):
     N = len(scores)
 
     sorted_score = []
@@ -56,7 +50,10 @@ def compute_expected_scores(scores, black_swan=True):
         if abs(c - 1.0) < 1e-6 and black_swan:
             # black swan
             count_black_swans += 1
-            c = c * (1 - count_black_swans / (i + 1))
+            if oracle_bs:
+                c = c * scores[i]
+            else:
+                c = c * (1 - count_black_swans / (i + 1))
 
         t = (c)**(N - i) # chance none the rest is better than i
 
@@ -73,21 +70,31 @@ def compute_expected_scores(scores, black_swan=True):
 def run_experiment(M=1000, N=200):
 
     total_score_secretary = 0
-    total_score_rank_withhold = 0
+    total_score_secretary_desperate = 0
     total_score_rank_black_swan = 0
     total_score_soft_hiring_black_swan = 0
+    total_score_rank_withhold = 0
     total_score_soft_hiring_withhold = 0
+    total_score_rank_oracle_bs = 0
+    total_score_soft_hiring_oracle_bs = 0
 
     for i in range(M):
         scores = random_score(N)
 
         p = execute_hiring(scores, N/math.e)
-        total_score_secretary += scores[p]
+        if p >= 0:
+            total_score_secretary += scores[p]
+            total_score_secretary_desperate += scores[p]
+        else:
+            total_score_secretary_desperate += scores[-1]
 
-        rank_withhold_picked = False
         rank_black_swan_picked = False
         soft_hiring_black_swan_picked = False
+        rank_withhold_picked = False
         soft_hiring_withhold_picked = False
+        rank_oracle_bs_picked = False
+        soft_hiring_oracle_bs_picked = False
+        
 
         for j, (e, c) in enumerate(compute_expected_scores(scores, black_swan=True)):
             if not soft_hiring_black_swan_picked and e > 0.5:
@@ -129,14 +136,35 @@ def run_experiment(M=1000, N=200):
         if not rank_withhold_picked:
             total_score_rank_withhold += scores[-1]
 
+        for j, (e, c) in enumerate(compute_expected_scores(scores, black_swan=True, oracle_bs=True)):
+            if not soft_hiring_oracle_bs_picked and e > 0.5:
+                total_score_soft_hiring_oracle_bs += scores[j]
+                soft_hiring_oracle_bs_picked = True
+
+            if not rank_oracle_bs_picked and c > 0.5:
+                total_score_rank_oracle_bs += scores[j]
+                rank_oracle_bs_picked = True
+
+            if rank_oracle_bs_picked and soft_hiring_oracle_bs_picked:
+                break
+
+        if not rank_oracle_bs_picked:
+            total_score_rank_oracle_bs += scores[-1]
+
+        if not soft_hiring_oracle_bs_picked:
+            total_score_soft_hiring_oracle_bs += scores
+
         print("Percent ", i*100/M, end='\r')
 
     print()
     print("Secretary score", total_score_secretary/M)
+    print("Secretary desperate score", total_score_secretary_desperate/M)
     print("Rank score with black swan", total_score_rank_black_swan/M)
     print("Soft hiring score with black swan", total_score_soft_hiring_black_swan/M)
     print("Rank score", total_score_rank_withhold/M)
     print("Soft hiring score with hold 1/e", total_score_soft_hiring_withhold/M)
+    print("Rank score oracle bs", total_score_rank_oracle_bs/M)
+    print("Soft hiring score oracle bs", total_score_soft_hiring_oracle_bs/M)
 
 
 if __name__ == '__main__':
