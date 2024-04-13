@@ -4,7 +4,14 @@ import math
 from math import comb
 
 
-def random_score(N):
+def random_score(N, normal=False):
+    if normal:
+        data = np.random.normal(500, 10, N)
+        # make sure all scores are positive
+        min_data = np.min(data)
+        data = (data - min_data) / (np.max(data) - min_data)
+        return data
+
     return np.random.randint(0, 1000, N)/1000
 
 
@@ -79,7 +86,7 @@ def run_experiment(M=1000, N=200):
     total_score_soft_hiring_oracle_bs = 0
 
     for i in range(M):
-        scores = random_score(N)
+        scores = random_score(N, normal=False)
 
         p = execute_hiring(scores, N/math.e)
         if p >= 0:
