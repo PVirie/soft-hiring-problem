@@ -73,8 +73,10 @@ def compute_expected_scores(scores, black_swan=True):
 def run_experiment(M=1000, N=200):
 
     total_score_secretary = 0
+    total_score_rank_withhold = 0
+    total_score_rank_black_swan = 0
     total_score_soft_hiring_black_swan = 0
-    total_score_soft_hiring_withhold_no_black_swan = 0
+    total_score_soft_hiring_withhold = 0
 
     for i in range(M):
         scores = random_score(N)
@@ -82,27 +84,59 @@ def run_experiment(M=1000, N=200):
         p = execute_hiring(scores, N/math.e)
         total_score_secretary += scores[p]
 
-        j = 0
-        for e, c in compute_expected_scores(scores, black_swan=True):
-            if e > 0.5:
-                break
-            j += 1
-        total_score_soft_hiring_black_swan += scores[j]
+        rank_withhold_picked = False
+        rank_black_swan_picked = False
+        soft_hiring_black_swan_picked = False
+        soft_hiring_withhold_picked = False
 
+        for j, (e, c) in enumerate(compute_expected_scores(scores, black_swan=True)):
+            if not soft_hiring_black_swan_picked and e > 0.5:
+                total_score_soft_hiring_black_swan += scores[j]
+                soft_hiring_black_swan_picked = True
 
-        j = 0
-        for e, c in compute_expected_scores(scores, black_swan=False):
-            if e > 0.5 and j > N/math.e:
+            if not rank_black_swan_picked and c > 0.5:
+                total_score_rank_black_swan += scores[j]
+                rank_black_swan_picked = True
+
+            if rank_black_swan_picked and soft_hiring_black_swan_picked:
                 break
-            j += 1
-        total_score_soft_hiring_withhold_no_black_swan += scores[j]
+
+        if not rank_black_swan_picked:
+            total_score_rank_black_swan += scores[-1]
+
+        if not soft_hiring_black_swan_picked:
+            total_score_soft_hiring_black_swan += scores[-1]
+
+        for j, (e, c) in enumerate(compute_expected_scores(scores, black_swan=False)):
+            # no black swan, need trial period
+            if j <= N/math.e:
+                continue
+
+            if not soft_hiring_withhold_picked and e > 0.5:
+                total_score_soft_hiring_withhold += scores[j]
+                soft_hiring_withhold_picked = True
+
+            if not rank_withhold_picked and c > 0.5:
+                total_score_rank_withhold += scores[j]
+                rank_withhold_picked = True
+
+            if rank_withhold_picked and soft_hiring_withhold_picked:
+                break
+
+        if not soft_hiring_withhold_picked:
+            total_score_soft_hiring_withhold += scores[-1]
+
+        if not rank_withhold_picked:
+            total_score_rank_withhold += scores[-1]
 
         print("Percent ", i*100/M, end='\r')
 
     print()
     print("Secretary score", total_score_secretary/M)
-    print("Soft hiring score", total_score_soft_hiring_black_swan/M)
-    print("Soft hiring score with hold 1/e no black swan", total_score_soft_hiring_withhold_no_black_swan/M)
+    print("Rank score with black swan", total_score_rank_black_swan/M)
+    print("Soft hiring score with black swan", total_score_soft_hiring_black_swan/M)
+    print("Rank score", total_score_rank_withhold/M)
+    print("Soft hiring score with hold 1/e", total_score_soft_hiring_withhold/M)
 
 
 if __name__ == '__main__':
