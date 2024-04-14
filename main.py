@@ -205,10 +205,10 @@ def run_experiment(M, N, normal):
 if __name__ == '__main__':
     
     print("Uniform distribution")
-    run_experiment(M=10000, N=200, normal=False)
+    run_experiment(M=100000, N=200, normal=False)
     print("=====================================")
     print("Normal distribution")
-    run_experiment(M=10000, N=200, normal=True)
+    run_experiment(M=100000, N=200, normal=True)
     print("=====================================")
     
     N = 100

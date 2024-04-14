@@ -1,0 +1,28 @@
+Uniform distribution
+Percent  99.999
+Secretary score 0.6078049900001389
+Secretary desperate score 0.799451510000165
+Secretary Bearden score 0.9276243300001042
+Rank score with black swan 0.9356720300000733
+Soft hiring score with black swan 0.9457943500000726
+Rank score with hold 1/e 0.9651730400001635
+Soft hiring score with hold 1/e 0.9694407400001619
+Rank score with hold sqrt(N) 0.9634143000001005
+Soft hiring score with hold sqrt(N) 0.9625736400000994
+Rank score oracle bs 0.9741359000003718
+Soft hiring score oracle bs 0.9805379100003114
+=====================================
+Normal distribution
+Percent  99.999
+Secretary score 0.5821529508778127
+Secretary desperate score 0.7631628487032817
+Secretary Bearden score 0.8110559529653586
+Rank score with black swan 0.8109748331239395
+Soft hiring score with black swan 0.8167707814371885
+Rank score with hold 1/e 0.8671516964427246
+Soft hiring score with hold 1/e 0.8688515707580092
+Rank score with hold sqrt(N) 0.8347686845936797
+Soft hiring score with hold sqrt(N) 0.8344469804099449
+Rank score oracle bs 0.8523124672837504
+Soft hiring score oracle bs 0.856800757146137
+=====================================
